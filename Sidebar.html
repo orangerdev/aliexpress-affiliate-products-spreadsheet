@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<base target="_top" />
+		<!-- Tambahkan Tailwind CSS -->
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script>
+			const maxProductTextLength = 60; // Panjang maksimum teks produk
+
+			// Fungsi untuk memuat data ID produk yang dicentang
+			function loadCheckedProductIDs() {
+				// Tampilkan modal "In Progress"
+				document.getElementById("inProgressModal").classList.remove("hidden");
+
+				google.script.run
+					.withSuccessHandler(function (checkedProducts) {
+						// Sembunyikan modal setelah data dimuat
+						document.getElementById("inProgressModal").classList.add("hidden");
+
+						// Kosongkan daftar sebelumnya
+						const list = document.getElementById("checkedRowsList");
+						list.innerHTML = "";
+
+						// Tambahkan ID produk dan data tambahan ke dalam daftar
+						checkedProducts.forEach(function (product) {
+							const listItem = document.createElement("li");
+							listItem.className =
+								"flex justify-between items-center py-2 border-b border-gray-300";
+
+							// Potong data tambahan jika lebih dari maxProductTextLength karakter
+							const truncatedData =
+								product.additionalData.length > maxProductTextLength
+									? product.additionalData.substring(0, maxProductTextLength) +
+									  "..."
+									: product.additionalData;
+
+							// Gabungkan produk ID dan title ke dalam satu container
+							const productInfoContainer = document.createElement("span");
+							productInfoContainer.innerHTML = `<span class="font-bold">[${product.productID}]</span> ${truncatedData}`;
+
+							// Tambahkan tombol hapus
+							const deleteButton = document.createElement("button");
+							deleteButton.textContent = "Hapus";
+							deleteButton.className =
+								"bg-red-500 text-white text-sm px-2 py-1 rounded";
+							deleteButton.onclick = function () {
+								uncheckProduct(product.productID);
+							};
+
+							// Tambahkan elemen ke dalam list item
+							listItem.appendChild(productInfoContainer);
+							listItem.appendChild(deleteButton);
+
+							// Tambahkan list item ke dalam daftar
+							list.appendChild(listItem);
+						});
+					})
+					.getCheckedProductIDs();
+			}
+
+			// Fungsi untuk menghapus checkbox berdasarkan ID produk
+			function uncheckProduct(productID) {
+				google.script.run
+					.withSuccessHandler(function () {
+						// Refresh daftar setelah checkbox dihapus
+						loadCheckedProductIDs();
+					})
+					.uncheckProductByID(productID);
+			}
+
+			// Fungsi untuk menampilkan modal dan memanggil fungsi backend
+			function showInProgressModal() {
+				// Tampilkan modal
+				document.getElementById("inProgressModal").classList.remove("hidden");
+
+				// Panggil fungsi backend
+				google.script.run
+					.withSuccessHandler(function () {
+						// Sembunyikan modal setelah selesai
+						document.getElementById("inProgressModal").classList.add("hidden");
+					})
+					.generateAffiliateLinksButton();
+			}
+
+			// Muat data saat halaman dimuat
+			window.onload = loadCheckedProductIDs;
+		</script>
+	</head>
+	<body class="w-full px-2">
+		<div class="max-w-md mx-auto">
+			<h1 class="text-xl font-bold mb-4">Selected Products</h1>
+			<ul id="checkedRowsList" class="mb-4 text-sm"></ul>
+			<div class="flex justify-between">
+				<button
+					class="bg-blue-500 text-white text-sm px-4 py-2 rounded"
+					onclick="loadCheckedProductIDs()">
+					Refresh
+				</button>
+				<button
+					class="bg-green-500 text-white text-sm px-4 py-2 rounded"
+					onclick="showInProgressModal()">
+					Generate Affiliate Links
+				</button>
+			</div>
+		</div>
+
+		<!-- Modal Popup -->
+		<div
+			id="inProgressModal"
+			class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+			<div class="bg-white p-6 rounded shadow-lg text-center">
+				<h2 class="text-lg font-bold mb-4">In Progress</h2>
+				<p class="text-sm text-gray-600">
+					Please wait while we process your request...
+				</p>
+			</div>
+		</div>
+	</body>
+</html>
