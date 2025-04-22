@@ -42,46 +42,6 @@ class AliExpressCLass {
 		return JSON.parse(response.getContentText());
 	}
 
-	sendMultipleGetRequest(page, paramsList) {
-		const requests = paramsList.map((params) => {
-			let url = this.url + page;
-
-			if (params instanceof Object) {
-				url += "?";
-				const Aparams = [];
-
-				Object.keys(params).forEach((key) => {
-					const value = params[key];
-					if (value instanceof Array) {
-						value.forEach((_v) => {
-							Aparams.push(`${key}[]=${_v}`);
-						});
-					} else {
-						if (value) {
-							Aparams.push(`${key}=${value}`);
-						}
-					}
-				});
-
-				url = url + Aparams.join("&");
-			}
-
-			Logger.log(url);
-
-			return {
-				url: url,
-				headers: {
-					Cookie: `xman_t=${CONFIG_COOKIE}`,
-				},
-				muteHttpExceptions: true,
-			};
-		});
-
-		const responses = UrlFetchApp.fetchAll(requests);
-
-		return responses.map((response) => JSON.parse(response.getContentText()));
-	}
-
 	/**
 	 * Parse Currency
 	 */
@@ -226,6 +186,10 @@ class AliExpressCLass {
 				`pageNum: ${pageNum}| ` +
 				`category: ${category}`,
 		);
+
+		// update last update
+
+		SHEET_CONFIG.getRange("B17").setValue(CURRENT_DATETIME);
 	}
 
 	/*

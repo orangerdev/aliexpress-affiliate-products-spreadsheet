@@ -21,6 +21,7 @@ const CONFIG_STOP_CRAWL = SHEET_CONFIG.getRange("B14").getValue();
 
 const CONFIG_TRACKER_ID = SHEET_CONFIG.getRange("B15").getValue();
 const CONFIG_FOLDER_ID = SHEET_CONFIG.getRange("B16").getValue();
+const CONFIG_LAST_UPDATE = SHEET_CONFIG.getRange("B17").getValue()
 
 const CURRENT_DATETIME = Utilities.formatDate(
 	new Date(),

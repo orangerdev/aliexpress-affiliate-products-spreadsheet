@@ -81,3 +81,46 @@ function generateAffiliateLinksButton() {
 		Logger.log("Error: " + error.message);
 	}
 }
+
+function doGet() {
+	// Ambil data dari sheet CONFIG untuk "last-update"
+	const lastUpdate = SHEET_CONFIG.getRange("B17").getValue(); // Asumsikan "last-update" ada di cell B17
+
+	// Ambil data dari sheet PRODUCT
+	const productData = SHEET_PRODUCT.getDataRange().getValues();
+
+	// Buat array untuk menyimpan data produk
+	const products = [];
+
+	// Loop melalui data produk, mulai dari baris kedua (baris pertama adalah header)
+	for (let i = 1; i < productData.length; i++) {
+		const row = productData[i];
+		products.push({
+			productId: row[1], // Kolom 2
+			imageUrl: row[2], // Kolom 3
+			productName: row[4], // Kolom 5
+			price: row[6], // Kolom 7
+			commission: row[7], // Kolom 8
+			commissionPercentage: row[8], // Kolom 9
+			totalItemsInCart: row[9], // Kolom 10
+			totalComments: row[10], // Kolom 11
+			commentScore: row[11], // Kolom 12
+			totalSales: row[12], // Kolom 13
+			isHotProduct: row[13], // Kolom 14
+		});
+	}
+
+	// Buat objek JSON untuk response
+	const response = {
+		"last-update": lastUpdate,
+		data: {
+			products: products,
+			total: products.length, // Jumlah total produk
+		},
+	};
+
+	// Kembalikan response dalam format JSON
+	return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(
+		ContentService.MimeType.JSON,
+	);
+}
