@@ -1,6 +1,14 @@
 function aliExPressGetProducts() {
 	const AliExpress = new AliExpressCLass();
 
+	const categoryId = AliExpress.getFirstActiveCategoryId();
+
+	if (!categoryId) {
+		writeLog("No active category found.");
+		return;
+	}
+
+	AliExpress.setCategory(categoryId);
 	AliExpress.getProducts();
 }
 
@@ -123,4 +131,20 @@ function doGet() {
 	return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(
 		ContentService.MimeType.JSON,
 	);
+}
+
+function clearAllDoneChecks() {
+	// Ambil sheet CATEGORY
+	const sheet = SHEET_CATEGORY;
+
+	// Ambil semua data dari sheet
+	const data = sheet.getDataRange().getValues();
+
+	// Loop melalui data, mulai dari baris kedua (baris pertama adalah header)
+	for (let i = 1; i < data.length; i++) {
+		// Set kolom D (DONE) menjadi false
+		sheet.getRange(i + 1, 4).setValue(false); // Baris ke-(i+1), Kolom 4 (D)
+	}
+
+	Logger.log("All DONE checkboxes have been cleared.");
 }

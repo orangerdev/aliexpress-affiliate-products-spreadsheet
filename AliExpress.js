@@ -1,6 +1,11 @@
 class AliExpressCLass {
 	constructor() {
 		this.url = "https://portals.aliexpress.com/";
+		this.category = "";
+	}
+
+	setCategory(category) {
+		this.category = category;
 	}
 
 	/**
@@ -42,6 +47,45 @@ class AliExpressCLass {
 		return JSON.parse(response.getContentText());
 	}
 
+	getFirstActiveCategoryId() {
+		// Ambil semua data dari sheet
+		const data = SHEET_CATEGORY.getDataRange().getValues();
+
+		// Loop melalui data, mulai dari baris kedua (baris pertama adalah header)
+		for (let i = 1; i < data.length; i++) {
+			const check = data[i][2]; // Kolom C (CHECK)
+			const done = data[i][3]; // Kolom D (DONE)
+
+			// Periksa apakah kolom C aktif (true) dan kolom D tidak aktif (false)
+			if (check === true && done === false) {
+				return data[i][1]; // Kolom B (ID)
+			}
+		}
+
+		// Jika tidak ditemukan, kembalikan null
+		return null;
+	}
+
+	checkDoneByCategoryId(targetId) {
+		// Ambil semua data dari sheet
+		const data = SHEET_CATEGORY.getDataRange().getValues();
+
+		// Loop melalui data, mulai dari baris kedua (baris pertama adalah header)
+		for (let i = 1; i < data.length; i++) {
+			const id = data[i][1]; // Kolom B (ID)
+
+			// Jika ID sesuai dengan targetId
+			if (id == targetId) {
+				// Cek checkbox pada kolom D (DONE)
+				SHEET_CATEGORY.getRange(i + 1, 4).setValue(true); // Baris ke-(i+1), Kolom 4 (D)
+				return true;
+			}
+		}
+
+		// Jika ID tidak ditemukan
+		return false;
+	}
+
 	/**
 	 * Parse Currency
 	 */
@@ -50,6 +94,10 @@ class AliExpressCLass {
 		const numberString = value.replace(/[^0-9.-]+/g, "");
 		// Mengonversi string menjadi float
 		return parseFloat(numberString);
+	}
+
+	stopCrawl() {
+		SHEET_CONFIG.getRange("B14").setValue("y");
 	}
 
 	/**
@@ -77,7 +125,7 @@ class AliExpressCLass {
 		const language = CONFIG_LANG ?? "en_EN";
 		const type = CONFIG_TYPE ?? "1";
 		const pageNum = CONFIG_CURRENT_PAGE;
-		const category = CONFIG_CATEGORY;
+		const categoryId = this.category ?? CONFIG_CATEGORY;
 
 		const response = this.sendGetRequest("material/productRecommend.do", {
 			requireCouponCode,
@@ -89,7 +137,7 @@ class AliExpressCLass {
 			pageNum,
 			pageSize: CONFIG_PAGE_LIMIT,
 			type,
-			categoryId: category,
+			categoryId,
 		});
 
 		// check response
@@ -104,17 +152,18 @@ class AliExpressCLass {
 					`language: ${language}| ` +
 					`type: ${type}| ` +
 					`pageNum: ${pageNum}| ` +
-					`category: ${category}`,
+					`category: ${categoryId}`,
 			);
 
-			SHEET_CONFIG.getRange("B14").setValue("y");
+			this.stopCrawl();
 			return;
 		}
 
 		// check if no product in results
 		if (response.data?.results?.length === 0) {
 			writeLog(`Return products = 0`);
-			SHEET_CONFIG.getRange("B14").setValue("y");
+			this.checkDoneByCategoryId(categoryId);
+			SHEET_CONFIG.getRange("B13").setValue("1");
 
 			return;
 		}
@@ -123,14 +172,9 @@ class AliExpressCLass {
 
 		// check if it reaches the end
 		if (data?.finish) {
-			SHEET_CONFIG.getRange("B14").setValue("y");
-		} else {
-			const nextPage = parseInt(pageNum) + 1;
-			SHEET_CONFIG.getRange("B13").setValue(nextPage);
-
-			if (nextPage === CONFIG_MAX_PAGE + 1) {
-				SHEET_CONFIG.getRange("B14").setValue("y");
-			}
+			writeLog(`Reached the end of the crawl`);
+			this.stopCrawl();
+			return;
 		}
 
 		data.results.forEach((product) => {
@@ -150,7 +194,7 @@ class AliExpressCLass {
 
 			const nextRow = SHEET_PRODUCT.getLastRow() + 1;
 
-			SHEET_PRODUCT.getRange(nextRow, 2, 1, 13).setValues([
+			SHEET_PRODUCT.getRange(nextRow, 2, 1, 14).setValues([
 				[
 					itemId,
 					productImg,
@@ -165,6 +209,7 @@ class AliExpressCLass {
 					commentScore,
 					sales30,
 					hotSales,
+					categoryId,
 				],
 			]);
 
@@ -184,12 +229,25 @@ class AliExpressCLass {
 				`language: ${language}| ` +
 				`type: ${type}| ` +
 				`pageNum: ${pageNum}| ` +
-				`category: ${category}`,
+				`category: ${categoryId}`,
 		);
 
 		// update last update
 
 		SHEET_CONFIG.getRange("B17").setValue(CURRENT_DATETIME);
+
+		const nextPageNum = pageNum + 1;
+
+		if (nextPageNum >= CONFIG_MAX_PAGE + 1) {
+			writeLog(
+				`Page number ${pageNum} exceeds maximum page limit ${CONFIG_MAX_PAGE}. Next crawling.`,
+			);
+			this.checkDoneByCategoryId(categoryId);
+			SHEET_CONFIG.getRange("B13").setValue("1");
+			return;
+		} else {
+			SHEET_CONFIG.getRange("B13").setValue(nextPageNum);
+		}
 	}
 
 	/*
