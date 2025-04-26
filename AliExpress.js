@@ -339,7 +339,8 @@ Discount Rate: ${productDetails.discountRate}
 					`trackingId: ${trackingId}|` +
 					`language: ${language}|` +
 					`shipTo: ${shipTo}|` +
-					`currency: ${currency}`,
+					`currency: ${currency}` +
+					`response: ${JSON.stringify(response)}`,
 			);
 
 			return false;
@@ -352,7 +353,8 @@ Discount Rate: ${productDetails.discountRate}
 					`trackingId: ${trackingId}|` +
 					`language: ${language}|` +
 					`shipTo: ${shipTo}|` +
-					`currency: ${currency}`,
+					`currency: ${currency}` +
+					`response: ${JSON.stringify(response)}`,
 			);
 
 			return false;

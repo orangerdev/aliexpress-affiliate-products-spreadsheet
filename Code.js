@@ -166,7 +166,7 @@ function aliExpressGenerateAffiliateLinks() {
 	let totalRow = 0;
 	// Loop melalui data, mulai dari baris kedua (baris pertama adalah header)
 	for (let i = 1; i < data.length; i++) {
-		if (totalRow > 7) {
+		if (totalRow > 9) {
 			break;
 		}
 
@@ -182,7 +182,6 @@ function aliExpressGenerateAffiliateLinks() {
 			if (!theLink) {
 				//Hapus baris yang tidak memiliki link
 				sheet.deleteRow(i + 1);
-				writeLog(`Affiliate link not found for product ID: ${productId}`);
 			} else {
 				// Set nilai affiliate link ke kolom P
 				sheet.getRange(i + 1, 16).setValue(theLink); // Kolom P (indeks 15, karena indeks dimulai dari 0)
