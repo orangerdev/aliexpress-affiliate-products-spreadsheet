@@ -342,7 +342,7 @@ Discount Rate: ${productDetails.discountRate}
 					`currency: ${currency}`,
 			);
 
-			return;
+			return false;
 		}
 
 		if (!response?.data?.promoteUrl || response?.success === false) {
@@ -355,7 +355,7 @@ Discount Rate: ${productDetails.discountRate}
 					`currency: ${currency}`,
 			);
 
-			return;
+			return false;
 		}
 
 		return response.data.promoteUrl;

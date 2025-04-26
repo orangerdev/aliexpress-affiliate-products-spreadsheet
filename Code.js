@@ -178,17 +178,22 @@ function aliExpressGenerateAffiliateLinks() {
 			totalRow++;
 
 			const theLink = AliExpress.getAffiliateProductLink(productId);
-			// Set nilai affiliate link ke kolom P
-			sheet.getRange(i + 1, 16).setValue(theLink); // Kolom P (indeks 15, karena indeks dimulai dari 0)
 
-			results.push({
-				row: i + 1, // Baris ke-(i+1) karena indeks dimulai dari 0
-				productIdValue: productId, // Nilai pada kolom B
-			});
+			if (!theLink) {
+				//Hapus baris yang tidak memiliki link
+				sheet.deleteRow(i + 1);
+				writeLog(`Affiliate link not found for product ID: ${productId}`);
+			} else {
+				// Set nilai affiliate link ke kolom P
+				sheet.getRange(i + 1, 16).setValue(theLink); // Kolom P (indeks 15, karena indeks dimulai dari 0)
+
+				results.push({
+					row: i + 1, // Baris ke-(i+1) karena indeks dimulai dari 0
+					productIdValue: productId, // Nilai pada kolom B
+				});
+			}
 		}
 	}
 
-	writeLog("Affiliate Links Generated", results);
-
-	Logger.log({ results, totalRow });
+	writeLog(`Affiliate links generated for ${results.length} products.`);
 }
