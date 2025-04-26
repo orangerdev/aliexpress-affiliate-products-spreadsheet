@@ -115,6 +115,8 @@ function doGet() {
 			commentScore: row[11], // Kolom 12
 			totalSales: row[12], // Kolom 13
 			isHotProduct: row[13], // Kolom 14
+			categoryId: row[14],
+			link: row[15], // Kolom 16
 		});
 	}
 
@@ -147,4 +149,46 @@ function clearAllDoneChecks() {
 	}
 
 	Logger.log("All DONE checkboxes have been cleared.");
+}
+
+function aliExpressGenerateAffiliateLinks() {
+	const AliExpress = new AliExpressCLass();
+
+	// Ambil sheet PRODUCT
+	const sheet = SHEET_PRODUCT;
+
+	// Ambil semua data dari sheet
+	const data = sheet.getDataRange().getValues();
+
+	// Array untuk menyimpan hasil
+	const results = [];
+
+	let totalRow = 0;
+	// Loop melalui data, mulai dari baris kedua (baris pertama adalah header)
+	for (let i = 1; i < data.length; i++) {
+		if (totalRow > 7) {
+			break;
+		}
+
+		const affiliateLink = data[i][15]; // Kolom P (indeks 15, karena indeks dimulai dari 0)
+		const productId = data[i][1]; // Kolom B (indeks 1)
+
+		// Periksa apakah kolom P kosong
+		if (!affiliateLink) {
+			totalRow++;
+
+			const theLink = AliExpress.getAffiliateProductLink(productId);
+			// Set nilai affiliate link ke kolom P
+			sheet.getRange(i + 1, 16).setValue(theLink); // Kolom P (indeks 15, karena indeks dimulai dari 0)
+
+			results.push({
+				row: i + 1, // Baris ke-(i+1) karena indeks dimulai dari 0
+				productIdValue: productId, // Nilai pada kolom B
+			});
+		}
+	}
+
+	writeLog("Affiliate Links Generated", results);
+
+	Logger.log({ results, totalRow });
 }

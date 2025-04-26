@@ -314,6 +314,53 @@ Discount Rate: ${productDetails.discountRate}
 		productFolder.createFile(txtFileName, productDetailsContent);
 	}
 
+	getAffiliateProductLink(productId) {
+		const trackingId = CONFIG_TRACKER_ID;
+		const language = CONFIG_LANG ?? "en_EN";
+		const shipTo = CONFIG_SHIP_TO;
+		const currency = CONFIG_CURRENCY ?? "USD";
+
+		if (parseInt(productId) === 0) {
+			return;
+		}
+
+		const response = this.sendGetRequest("promote/promoteNow.do", {
+			productId,
+			language,
+			trackingId,
+			shipTo,
+			currency,
+		});
+
+		if (!response || response?.code != "00" || !response?.success) {
+			writeLog(
+				`CANT GET AFFILIATE PRODUCT ` +
+					`productId: ${productId}|` +
+					`trackingId: ${trackingId}|` +
+					`language: ${language}|` +
+					`shipTo: ${shipTo}|` +
+					`currency: ${currency}`,
+			);
+
+			return;
+		}
+
+		if (!response?.data?.promoteUrl || response?.success === false) {
+			writeLog(
+				`INVALID AFFILIATE PRODUCT LINK ` +
+					`productId: ${productId}|` +
+					`trackingId: ${trackingId}|` +
+					`language: ${language}|` +
+					`shipTo: ${shipTo}|` +
+					`currency: ${currency}`,
+			);
+
+			return;
+		}
+
+		return response.data.promoteUrl;
+	}
+
 	/**
 	 * Get affiliate product data based on productID
 	 * @param {string} productId
