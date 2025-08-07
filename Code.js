@@ -170,18 +170,18 @@ function aliExpressGenerateAffiliateLinks() {
 			break;
 		}
 
-		const affiliateLink = data[i][15]; // Kolom P (indeks 15, karena indeks dimulai dari 0)
+		const isChecked = data[i][16]; // Kolom P (indeks 15, karena indeks dimulai dari 0)
 		const productId = data[i][1]; // Kolom B (indeks 1)
 
 		// Periksa apakah kolom P kosong
-		if (!affiliateLink) {
+		if (!isChecked) {
 			totalRow++;
 
 			const theLink = AliExpress.getAffiliateProductLink(productId);
 
+			sheet.getRange(i + 1, 17).setValue(true);
+
 			if (!theLink) {
-				//Hapus baris yang tidak memiliki link
-				sheet.deleteRow(i + 1);
 			} else {
 				// Set nilai affiliate link ke kolom P
 				sheet.getRange(i + 1, 16).setValue(theLink); // Kolom P (indeks 15, karena indeks dimulai dari 0)
@@ -195,4 +195,89 @@ function aliExpressGenerateAffiliateLinks() {
 	}
 
 	writeLog(`Affiliate links generated for ${results.length} products.`);
+}
+
+function syncProductToD1() {
+	const AliExpress = new AliExpressCLass();
+
+	// Ambil sheet PRODUCT
+	const sheet = SHEET_PRODUCT;
+
+	// Ambil semua data dari sheet
+	const data = sheet.getDataRange().getValues();
+
+	// Array untuk menyimpan hasil
+	const results = [];
+
+	let totalRow = 0;
+	// Loop melalui data, mulai dari baris kedua (baris pertama adalah header)
+	for (let i = 1; i < data.length; i++) {
+		if (totalRow > 19) {
+			break;
+		}
+
+		const isSynced = data[i][17];
+		const isGenerated = data[i][16];
+		const affiliateLink = data[i][15]; // Kolom P (indeks 15, karena indeks dimulai dari 0)
+		// ambil data dari kolom B hingga kolom P
+		const productData = data[i].slice(1, 16); // Kolom B hingga P (indeks 1 hingga 15)
+
+		// Periksa apakah kolom P kosong
+		if (!isSynced && isGenerated && affiliateLink != "") {
+			try {
+				totalRow++;
+
+				// POST data ke https://alisync.orangerdigiart.workers.dev/api/add-product dengan metode POST dan Bearer token CONFIG_SYNC_TOKEN
+				const options = {
+					method: "post",
+					contentType: "application/json",
+					headers: {
+						Authorization: `Bearer ${CONFIG_SYNC_TOKEN}`,
+					},
+					payload: JSON.stringify({
+						productId: productData[0], // Kolom B
+						imageUrl: productData[1], // Kolom C
+						productName: productData[3], // Kolom E
+						price: productData[5], // Kolom G
+						commission: productData[6], // Kolom H
+						commissionPercentage: productData[7], // Kolom I
+						totalItemsInCart: productData[8], // Kolom J
+						totalComments: productData[9], // Kolom K
+						commentScore: productData[10], // Kolom L
+						totalSales: productData[11], // Kolom M
+						isHotProduct: productData[12], // Kolom N
+						categoryId: productData[13], // Kolom O
+						link: productData[14], // Kolom P
+					}),
+				};
+
+				const response = UrlFetchApp.fetch(
+					"https://alisync.orangerdigiart.workers.dev/api/add-product",
+					options,
+				);
+
+				const responseCode = response.getResponseCode();
+				const responseBody = response.getContentText();
+				const responseData = JSON.parse(responseBody);
+
+				writeLog(
+					`Sync product ${productData[0]} to D1: ${responseCode} - ${responseData.message}`,
+				);
+				sheet.getRange(i + 1, 18).setValue(true);
+
+				results.push({
+					row: i + 1, // Baris ke-(i+1) karena indeks dimulai dari 0,
+					productIdValue: productData[0], // Nilai pada kolom B
+					responseCode: responseCode,
+					responseMessage: responseData.message,
+					responseData: responseData,
+				});
+			} catch (error) {
+				writeLog(`Error syncing product ${productData[0]}: ${error.message}`);
+				sheet.getRange(i + 1, 18).setValue(false);
+			}
+		}
+	}
+
+	Logger.log(results);
 }

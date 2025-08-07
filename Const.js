@@ -24,6 +24,8 @@ const CONFIG_TRACKER_ID = SHEET_CONFIG.getRange("B15").getValue();
 const CONFIG_FOLDER_ID = SHEET_CONFIG.getRange("B16").getValue();
 const CONFIG_LAST_UPDATE = SHEET_CONFIG.getRange("B17").getValue();
 
+const CONFIG_SYNC_TOKEN = SHEET_CONFIG.getRange("B18").getValue();
+
 const CURRENT_DATETIME = Utilities.formatDate(
 	new Date(),
 	"GMT+7",
